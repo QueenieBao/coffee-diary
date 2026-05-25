@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>咖啡日记</title>
+
+
+
+<style>
+:root {
+  --bg:#f5f0e8;--bg2:#ede6d8;--bg3:#e2d9c8;--card:#ede6d8;
+  --accent:#8b5e34;--accent2:#b07d4a;--text:#2c1e0f;--text2:#6b4f33;--text3:#a08060;
+  --caff:#b07020;--green:#4a9060;--blue:#3a7aaa;--red:#b04040;
+  --sheet-bg:#faf7f2;--border:#d4c8b0;
+  --radius:16px;--sb:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);font-family:-apple-system,'PingFang SC','Helvetica Neue',sans-serif;color:var(--text);display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative;}
+#pages{flex:1;overflow:hidden;position:relative;}
+.page{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;display:none;flex-direction:column;padding-bottom:calc(72px + var(--sb));}
+.page.active{display:flex;}
+.page::-webkit-scrollbar{display:none;}
+
+/* ── Nav ── */
+#bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(245,240,232,.96);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;padding:10px 0 calc(10px + var(--sb));z-index:200;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:10px;font-family:inherit;transition:color .2s;}
+.nav-item.active{color:var(--accent);}
+.nav-icon{font-size:22px;line-height:1;}
+.nav-item.active .nav-icon{filter:drop-shadow(0 0 5px rgba(139,94,52,.3));}
+
+/* ── Login screen ── */
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;gap:20px;}
+.login-logo{font-size:64px;margin-bottom:4px;filter:drop-shadow(0 4px 12px rgba(139,94,52,.2));}
+.login-title{font-size:28px;font-weight:700;color:var(--text);text-align:center;}
+.login-sub{font-size:14px;color:var(--text3);text-align:center;line-height:1.5;}
+.login-input{width:100%;background:var(--sheet-bg);border:1.5px solid var(--border);border-radius:14px;color:var(--text);padding:14px 16px;font-size:16px;outline:none;font-family:inherit;text-align:center;}
+.login-input:focus{border-color:var(--accent2);}
+.login-input::placeholder{color:var(--text3);}
+.login-btn{width:100%;background:linear-gradient(135deg,#8b5e34,#6b3e1a);border:none;border-radius:14px;color:#fff;padding:15px;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .2s;box-shadow:0 4px 16px rgba(139,94,52,.25);}
+.login-btn:disabled{opacity:.3;cursor:not-allowed;}
+.user-list{width:100%;display:flex;flex-direction:column;gap:8px;}
+.user-btn{width:100%;background:var(--sheet-bg);border:1.5px solid var(--border);border-radius:12px;color:var(--text);padding:13px 16px;font-size:15px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:10px;transition:border-color .2s;}
+.user-btn:hover{border-color:var(--accent2);}
+.user-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.login-divider{display:flex;align-items:center;gap:10px;width:100%;}
+.login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.login-divider span{font-size:12px;color:var(--text3);}
+
+/* ── Home page ── */
+#home-header{padding:52px 18px 12px;display:flex;justify-content:space-between;align-items:flex-start;}
+.home-month{font-size:34px;font-weight:700;letter-spacing:-1px;}
+.home-date{font-size:12px;color:var(--text2);margin-top:2px;}
+.home-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+.home-user-badge{display:flex;align-items:center;gap:6px;background:var(--bg2);border-radius:20px;padding:5px 10px 5px 6px;cursor:pointer;}
+.home-user-avatar{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;}
+.home-user-name{font-size:13px;color:var(--text2);}
+.home-mcup{font-size:11px;color:var(--text3);text-align:right;}
+
+/* Calendar */
+#cal-wrap{padding:0 14px;}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.cal-nav-btn{background:var(--bg2);border:none;border-radius:10px;color:var(--text2);width:32px;height:32px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.cal-nav-label{font-size:14px;color:var(--text2);font-weight:500;}
+.cal-grid-wrap{background:var(--sheet-bg);border-radius:22px;padding:14px 10px;overflow:hidden;box-shadow:0 2px 16px rgba(139,94,52,.08);border:1px solid var(--border);}
+.weekday-row{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px;}
+.wday{text-align:center;font-size:11px;color:var(--text3);}
+.days-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.day-cell{aspect-ratio:1;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;background:var(--bg2);border:none;display:flex;align-items:center;justify-content:center;}
+.day-cell.empty{background:transparent;cursor:default;}
+.day-cell.today{outline:2px solid var(--accent);outline-offset:-2px;}
+.day-cell img{width:100%;height:100%;object-fit:cover;display:block;}
+.day-num{font-size:13px;color:var(--text3);font-weight:500;}
+.day-cell.today .day-num{color:var(--accent);font-weight:700;}
+.day-num-overlay{position:absolute;bottom:2px;right:4px;font-size:9px;color:rgba(255,255,255,.9);font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.5);}
+.grid2{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;width:100%;height:100%;gap:1px;}
+.grid2 img{width:100%;height:100%;object-fit:cover;}
+
+/* Add FAB */
+#add-fab{margin:14px 14px 0;background:linear-gradient(135deg,#8b5e34,#6b3e1a);border:none;border-radius:50px;color:#fff;font-size:16px;font-weight:600;letter-spacing:1px;padding:15px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 20px rgba(139,94,52,.3);}
+#add-fab:active{transform:scale(.97);}
+
+/* AI Recommend card */
+#ai-rec-card{margin:14px 14px 0;background:linear-gradient(135deg,#fdf8f0,#f5ede0);border:1px solid #d4b896;border-radius:18px;padding:16px;position:relative;overflow:hidden;}
+#ai-rec-card::before{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;background:radial-gradient(circle,rgba(139,94,52,.08),transparent);border-radius:50%;}
+.rec-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.rec-icon{font-size:18px;}
+.rec-title{font-size:13px;font-weight:600;color:var(--accent);}
+.rec-refresh{margin-left:auto;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text3);padding:4px 8px;font-size:11px;cursor:pointer;font-family:inherit;}
+.rec-body{font-size:14px;color:var(--text2);line-height:1.65;}
+.rec-body strong{color:var(--text);}
+.rec-context{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.ctx-tag{background:rgba(139,94,52,.08);border:1px solid rgba(139,94,52,.15);border-radius:8px;padding:4px 10px;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px;}
+.rec-loading{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text3);}
+
+/* Today section */
+#today-section{padding:16px 14px 0;}
+.section-title{font-size:18px;font-weight:700;margin-bottom:10px;color:var(--text);}
+.caff-card{background:var(--sheet-bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;}
+.caff-bar-wrap{height:6px;background:var(--bg3);border-radius:3px;margin:8px 0 5px;}
+.caff-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--caff),#e8a020);transition:width .6s cubic-bezier(.34,1.56,.64,1);}
+.caff-range{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);}
+.caff-top{display:flex;justify-content:space-between;align-items:baseline;}
+.caff-label{font-size:12px;color:var(--text3);}
+.caff-val-big{font-size:22px;font-weight:700;color:var(--caff);}
+.caff-unit{font-size:12px;color:var(--text3);margin-left:2px;}
+
+/* Friends Today */
+#friends-section{padding:10px 14px 0;}
+.friends-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;}
+.friends-scroll::-webkit-scrollbar{display:none;}
+.friend-today-card{flex-shrink:0;background:var(--sheet-bg);border:1px solid var(--border);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:80px;cursor:pointer;}
+.friend-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.friend-name{font-size:11px;color:var(--text2);text-align:center;}
+.friend-cups{font-size:10px;color:var(--text3);}
+.friend-thumb{width:36px;height:36px;border-radius:8px;object-fit:cover;}
+
+/* Entry cards */
+.entry-card{background:var(--sheet-bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;display:flex;gap:12px;align-items:center;margin-bottom:8px;}
+.entry-thumb{width:52px;height:52px;border-radius:12px;object-fit:cover;flex-shrink:0;}
+.entry-icon-ph{width:52px;height:52px;border-radius:12px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.entry-info{flex:1;min-width:0;}
+.entry-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);}
+.entry-sub{font-size:12px;color:var(--text3);margin-top:2px;}
+.entry-tags{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap;}
+.etag{background:var(--bg2);border-radius:6px;padding:2px 7px;font-size:10px;color:var(--text3);}
+.etag.ice{color:var(--blue);}
+.etag.hot{color:#c05020;}
+.entry-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+.ecaff{font-size:18px;font-weight:700;color:var(--caff);}
+.ecaff-u{font-size:9px;color:var(--text3);}
+.del-btn{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:4px;}
+
+/* ── Stats page ── */
+#stats-page{padding:52px 16px 0;}
+.stats-header{margin-bottom:16px;}
+.stats-title{font-size:26px;font-weight:700;color:var(--text);}
+.stats-sub{font-size:13px;color:var(--text2);margin-top:2px;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.stat-card{background:var(--sheet-bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:6px;}
+.stat-icon{font-size:18px;}
+.stat-val{font-size:24px;font-weight:700;color:var(--text);}
+.stat-val.accent{color:var(--accent);}
+.stat-key{font-size:11px;color:var(--text3);}
+.wide{grid-column:1/-1;}
+.chart-bar-wrap{display:flex;align-items:flex-end;gap:5px;height:70px;margin-top:8px;}
+.chart-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end;}
+.chart-bar{width:100%;background:linear-gradient(180deg,var(--accent2),var(--accent));border-radius:5px 5px 0 0;min-height:3px;}
+.chart-bar-label{font-size:9px;color:var(--text3);}
+.type-list{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+.type-row{display:flex;align-items:center;gap:8px;}
+.type-bar-bg{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.type-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;}
+.type-name{font-size:12px;color:var(--text2);width:72px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.type-cnt{font-size:11px;color:var(--text3);width:20px;text-align:right;}
+
+/* Friends leaderboard */
+.friend-lb-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.friend-lb-row:last-child{border-bottom:none;}
+.lb-rank{font-size:14px;font-weight:700;width:24px;color:var(--text3);}
+.lb-rank.gold{color:#c09020;}
+.lb-rank.silver{color:#808080;}
+.lb-rank.bronze{color:#8b5e34;}
+
+/* ── Settings ── */
+#settings-page{padding:52px 16px 0;}
+.set-title{font-size:26px;font-weight:700;margin-bottom:16px;color:var(--text);}
+.set-section{background:var(--sheet-bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:12px;}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);font-size:15px;color:var(--text);}
+.set-row:last-child{border-bottom:none;}
+.set-row-left{display:flex;align-items:center;gap:10px;}
+.set-row-icon{font-size:18px;width:26px;text-align:center;}
+.set-row-val{font-size:14px;color:var(--text3);}
+.set-danger{color:var(--red);}
+
+/* ── Overlay / Sheet ── */
+.overlay{position:fixed;inset:0;background:rgba(44,30,15,.4);backdrop-filter:blur(6px);z-index:300;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .25s;}
+.overlay.show{opacity:1;pointer-events:all;}
+.sheet{width:100%;max-width:430px;margin:0 auto;background:var(--sheet-bg);border-radius:24px 24px 0 0;padding:0 18px calc(32px + var(--sb));max-height:92vh;overflow-y:auto;transform:translateY(60px);transition:transform .3s cubic-bezier(.34,1.2,.64,1);border-top:1px solid var(--border);}
+.sheet::-webkit-scrollbar{display:none;}
+.overlay.show .sheet{transform:translateY(0);}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 20px;}
+.sheet-title{font-size:20px;font-weight:700;margin-bottom:18px;color:var(--text);}
+
+/* Form */
+.f-label{font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:block;}
+.f-section{margin-bottom:16px;}
+.chips{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;color:var(--text2);padding:7px 11px;font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
+.cat-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:8px;}
+.cat-scroll::-webkit-scrollbar{display:none;}
+.cat-chip{flex-shrink:0;background:transparent;border:1.5px solid var(--border);border-radius:20px;color:var(--text3);padding:4px 12px;font-size:12px;cursor:pointer;font-family:inherit;}
+.cat-chip.on{border-color:var(--accent);color:var(--accent);background:rgba(139,94,52,.06);}
+.f-input{width:100%;background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;color:var(--text);padding:12px 14px;font-size:16px;outline:none;font-family:inherit;}
+.f-input:focus{border-color:var(--accent2);}
+.f-input::placeholder{color:var(--text3);}
+textarea.f-input{resize:none;font-size:14px;}
+.photo-zone{border:2px dashed var(--border);border-radius:14px;min-height:88px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px;overflow:hidden;position:relative;background:var(--bg2);}
+.photo-zone img{width:100%;max-height:170px;object-fit:cover;display:block;}
+.pz-icon{font-size:26px;}
+.pz-text{font-size:13px;color:var(--text3);}
+.pz-hint{font-size:11px;color:var(--text3);opacity:.6;}
+.ai-overlay{position:absolute;inset:0;background:rgba(245,240,232,.85);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--accent);gap:8px;}
+.save-btn{width:100%;background:linear-gradient(135deg,#8b5e34,#6b3e1a);border:none;border-radius:14px;color:#fff;padding:15px;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:1px;margin-top:8px;transition:opacity .2s;box-shadow:0 4px 16px rgba(139,94,52,.2);}
+.save-btn:disabled{opacity:.3;cursor:not-allowed;}
+
+/* Day sheet */
+.day-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.day-date-big{font-size:20px;font-weight:700;color:var(--text);}
+.day-add-btn{background:var(--accent);border:none;border-radius:20px;color:#fff;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+
+/* Weather picker */
+.weather-row{display:flex;gap:8px;}
+.weather-opt{flex:1;background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:8px 4px;text-align:center;cursor:pointer;font-size:12px;color:var(--text2);display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .15s;}
+.weather-opt.on{border-color:var(--accent);background:rgba(139,94,52,.06);}
+.weather-opt .wi{font-size:20px;}
+
+/* Animations */
+@keyframes spin{to{transform:rotate(360deg);}}
+.spin{display:inline-block;animation:spin .8s linear infinite;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.fade-up{animation:fadeUp .3s ease forwards;}
+.empty{text-align:center;padding:36px 0;color:var(--text3);}
+.empty-icon{font-size:40px;margin-bottom:10px;}
+
+/* Custom type input */
+#custom-type-wrap{margin-top:8px;display:none;}
+#custom-type-wrap.show{display:flex;gap:8px;}
+#custom-type-input{flex:1;background:var(--bg2);border:1.5px solid var(--accent2);border-radius:10px;color:var(--text);padding:8px 12px;font-size:13px;outline:none;font-family:inherit;}
+#custom-type-input::placeholder{color:var(--text3);}
+#custom-type-confirm{background:var(--accent);border:none;border-radius:10px;color:#fff;padding:8px 14px;font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+
+/* PIN pad */
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:280px;margin:0 auto;}
+.pin-btn{background:var(--bg2);border:1.5px solid var(--border);border-radius:14px;height:56px;font-size:22px;font-weight:500;color:var(--text);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;transition:all .1s;}
+.pin-btn:active{background:var(--bg3);transform:scale(.94);}
+.pin-btn.del{font-size:18px;color:var(--text3);}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:all .2s;}
+.pin-dot.filled{background:var(--accent);border-color:var(--accent);}
+
+/* Emoji grid button */
+.emoji-btn{background:var(--bg2);border:2px solid transparent;border-radius:10px;padding:6px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;aspect-ratio:1;}
+.emoji-btn.on{border-color:var(--accent);background:rgba(139,94,52,.08);}
+
+/* Login screen layout */
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:56px 28px 32px;gap:0;overflow-y:auto;}
+#login-screen::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN SCREEN ── -->
+<div id="login-screen">
+  <!-- Step 1: pick / create account -->
+  <div id="ls-main" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:18px">
+    <div class="login-logo">☕</div>
+    <div class="login-title">咖啡日记</div>
+    <div class="login-sub" id="daily-slogan">和朋友一起记录每一杯咖啡</div>
+
+    <div id="existing-users" class="user-list" style="display:none">
+      <div style="font-size:13px;color:var(--text3);margin-bottom:4px">选择账户</div>
+    </div>
+    <div class="login-divider" id="login-divider" style="display:none"><span>或创建新账户</span></div>
+    <button class="login-btn" id="show-create-btn" style="background:var(--bg2);color:var(--accent);border:1.5px solid var(--border);box-shadow:none">＋ 创建新账户</button>
+  </div>
+
+  <!-- Step 2: create account form -->
+  <div id="ls-create" style="width:100%;display:none;flex-direction:column;align-items:center;gap:16px">
+    <div style="display:flex;align-items:center;gap:10px;width:100%">
+      <button id="ls-back-btn" style="background:none;border:none;font-size:22px;color:var(--text3);cursor:pointer;padding:4px">‹</button>
+      <div style="font-size:18px;font-weight:700;color:var(--text)">创建账户</div>
+    </div>
+
+    <!-- Avatar picker -->
+    <div style="width:100%">
+      <div style="font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">选择头像</div>
+      <div id="emoji-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-bottom:10px"></div>
+      <!-- Upload avatar -->
+      <div id="avatar-upload-zone" style="border:2px dashed var(--border);border-radius:12px;padding:12px;text-align:center;cursor:pointer;background:var(--bg2)">
+        <div style="font-size:13px;color:var(--text3)">📁 上传自定义头像</div>
+        <div style="font-size:11px;color:var(--text3);opacity:.6;margin-top:2px">支持 JPG / PNG</div>
+      </div>
+      <input type="file" id="avatar-upload-input" accept="image/*" style="display:none">
+      <!-- Preview -->
+      <div id="avatar-preview-wrap" style="display:none;margin-top:10px;align-items:center;gap:10px">
+        <img id="avatar-preview-img" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--accent2)">
+        <div>
+          <div style="font-size:13px;color:var(--text)">已选择自定义头像</div>
+          <button id="avatar-clear-btn" style="background:none;border:none;font-size:12px;color:var(--text3);cursor:pointer;padding:0;margin-top:2px">重新选择</button>
+        </div>
+      </div>
+    </div>
+
+    <input class="login-input" id="name-input" placeholder="输入你的昵称（最多10字）" maxlength="10" style="text-align:left;padding-left:16px">
+
+    <!-- PIN setup -->
+    <div style="width:100%">
+      <div style="font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">设置 4 位 PIN 码</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">用于登录验证，保护你的账户</div>
+      <div id="create-pin-dots" style="display:flex;gap:12px;justify-content:center;margin-bottom:14px"></div>
+      <div id="create-pin-pad" class="pin-pad"></div>
+    </div>
+
+    <button class="login-btn" id="create-confirm-btn" disabled>创建账户</button>
+  </div>
+
+  <!-- Step 3: PIN verify -->
+  <div id="ls-verify" style="width:100%;display:none;flex-direction:column;align-items:center;gap:16px">
+    <div id="verify-avatar" style="width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--bg2);overflow:hidden"></div>
+    <div style="font-size:20px;font-weight:700;color:var(--text)" id="verify-name"></div>
+    <div style="font-size:13px;color:var(--text3)">输入 PIN 码登录</div>
+    <div id="verify-pin-dots" style="display:flex;gap:12px;justify-content:center"></div>
+    <div id="verify-pin-pad" class="pin-pad"></div>
+    <div id="verify-error" style="font-size:13px;color:var(--red);min-height:18px;text-align:center"></div>
+    <button id="forgot-pin-btn" style="background:none;border:none;font-size:13px;color:var(--accent2);cursor:pointer;text-decoration:underline">忘记 PIN 码？</button>
+    <button id="verify-back-btn" style="background:none;border:none;font-size:13px;color:var(--text3);cursor:pointer">← 返回选择账户</button>
+  </div>
+
+  <!-- Step 4: Forgot PIN -->
+  <div id="ls-forgot" style="width:100%;display:none;flex-direction:column;align-items:center;gap:16px">
+    <div style="font-size:40px">🔐</div>
+    <div style="font-size:20px;font-weight:700;color:var(--text)">忘记 PIN 码</div>
+    <div id="forgot-admin-info" style="width:100%;background:var(--sheet-bg);border:1.5px solid var(--border);border-radius:14px;padding:16px">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">请联系管理员重置你的 PIN 码</div>
+      <div id="forgot-admin-card" style="display:flex;align-items:center;gap:10px"></div>
+    </div>
+    <div style="background:#fffbf0;border:1px solid #e8d090;border-radius:12px;padding:14px;width:100%;font-size:13px;color:#7a6020;line-height:1.6">
+      💡 让管理员在「设置 → 管理员面板」中找到你的账户，点击「重置 PIN」即可
+    </div>
+    <button id="forgot-back-btn" style="background:none;border:none;font-size:13px;color:var(--text3);cursor:pointer">← 返回登录</button>
+  </div>
+</div>
+
+<!-- ── PAGES ── -->
+<div id="pages" style="display:none">
+  <!-- HOME -->
+  <div class="page active" id="home-page">
+    <div id="home-header">
+      <div>
+        <div class="home-month" id="hdr-month"></div>
+        <div class="home-date" id="hdr-date"></div>
+      </div>
+      <div class="home-right">
+        <div class="home-user-badge" id="user-badge" onclick="showOverlay('switch-overlay')">
+          <div class="home-user-avatar" id="badge-avatar"></div>
+          <div class="home-user-name" id="badge-name"></div>
+        </div>
+        <div class="home-mcup" id="hdr-mcup"></div>
+      </div>
+    </div>
+
+    <div id="cal-wrap">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="prev-btn">‹</button>
+        <div class="cal-nav-label" id="cal-label"></div>
+        <button class="cal-nav-btn" id="next-btn">›</button>
+      </div>
+      <div class="cal-grid-wrap">
+        <div class="weekday-row" id="weekday-row"></div>
+        <div class="days-row" id="days-row"></div>
+      </div>
+    </div>
+
+    <button id="add-fab">＋ 添加一杯</button>
+
+    <!-- AI Recommendation -->
+    <div id="ai-rec-card">
+      <div class="rec-header">
+        <span class="rec-icon">✨</span>
+        <span class="rec-title">今日推荐</span>
+        <button class="rec-refresh" id="rec-refresh-btn">刷新推荐</button>
+      </div>
+      <div class="rec-context" id="rec-context"></div>
+      <div class="rec-body" id="rec-body">
+        <span style="color:var(--text3);font-size:13px">记录满一个月后将根据您的偏好、天气和今天是否工作日为您推荐咖啡 ☁️</span>
+      </div>
+    </div>
+
+    <!-- Friends Today -->
+    <div id="friends-section">
+      <div class="section-title" style="padding:14px 0 8px">朋友们今天喝了</div>
+      <div class="friends-scroll" id="friends-scroll"></div>
+    </div>
+
+    <div id="today-section">
+      <div class="section-title" style="padding:14px 0 8px">今日咖啡</div>
+      <div class="caff-card">
+        <div class="caff-top">
+          <div class="caff-label">咖啡因摄入</div>
+          <div><span class="caff-val-big" id="caff-val">0</span><span class="caff-unit">mg / 400mg</span></div>
+        </div>
+        <div class="caff-bar-wrap"><div class="caff-bar-fill" id="caff-bar" style="width:0%"></div></div>
+        <div class="caff-range"><span>0</span><span>⚠️ 400mg</span></div>
+      </div>
+      <div id="today-list"></div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="page" id="stats-page">
+    <div style="padding:52px 16px 0">
+      <div class="stats-header">
+        <div class="stats-title">数据统计</div>
+        <div class="stats-sub" id="stats-sub"></div>
+      </div>
+      <!-- User picker -->
+      <div class="cat-scroll" id="stats-user-tabs" style="margin-bottom:14px"></div>
+      <div class="stat-grid" id="stat-grid"></div>
+      <div class="stat-card wide" style="background:var(--sheet-bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
+        <div style="font-size:12px;color:var(--text3)">本周每日杯数</div>
+        <div class="chart-bar-wrap" id="week-chart"></div>
+      </div>
+      <div class="stat-card wide" style="background:var(--sheet-bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
+        <div style="font-size:12px;color:var(--text3);margin-bottom:2px">常喝类型</div>
+        <div class="type-list" id="type-list"></div>
+      </div>
+      <!-- Friends leaderboard -->
+      <div class="stat-card wide" style="background:var(--sheet-bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
+        <div style="font-size:12px;color:var(--text3);margin-bottom:10px">本月咖啡排行 ☕</div>
+        <div id="friends-lb"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="settings-page">
+    <div style="padding:52px 16px 0">
+      <div class="set-title">设置</div>
+      <div class="set-section">
+        <div class="set-row">
+          <div class="set-row-left"><span class="set-row-icon">👤</span>当前用户</div>
+          <div class="set-row-val" id="set-username"></div>
+        </div>
+        <div class="set-row" onclick="showOverlay('switch-overlay')" style="cursor:pointer">
+          <div class="set-row-left"><span class="set-row-icon">🔄</span>切换账户</div>
+          <div class="set-row-val">›</div>
+        </div>
+      </div>
+      <div class="set-section">
+        <div class="set-row"><div class="set-row-left"><span class="set-row-icon">⚡</span>每日咖啡因上限</div><div class="set-row-val">400 mg</div></div>
+        <div class="set-row"><div class="set-row-left"><span class="set-row-icon">💱</span>货币</div><div class="set-row-val">¥</div></div>
+      </div>
+      <div class="set-section">
+        <div class="set-row" id="export-btn" style="cursor:pointer"><div class="set-row-left"><span class="set-row-icon">📤</span>导出我的数据</div><div class="set-row-val">JSON</div></div>
+      </div>
+      <div class="set-section">
+        <div class="set-row set-danger" id="clear-btn" style="cursor:pointer"><div class="set-row-left"><span class="set-row-icon">🗑️</span>清除我的数据</div></div>
+        <div class="set-row set-danger" id="delete-account-btn" style="cursor:pointer"><div class="set-row-left"><span class="set-row-icon">❌</span>注销账户</div></div>
+      </div>
+
+      <!-- Admin panel (only visible to admin) -->
+      <div id="admin-section" style="display:none">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;margin-top:4px">
+          <span style="font-size:16px">👑</span>
+          <span style="font-size:13px;font-weight:600;color:var(--accent)">管理员面板</span>
+        </div>
+        <div class="set-section" id="admin-user-list"></div>
+      </div>
+
+      <div style="text-align:center;font-size:11px;color:var(--text3);margin-top:20px">咖啡日记 v3.0 · 多用户共享版</div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom nav -->
+<div id="bottom-nav" style="display:none">
+  <button class="nav-item active" data-page="home-page" onclick="switchPage(this)">
+    <span class="nav-icon">☕</span><span>日记</span>
+  </button>
+  <button class="nav-item" data-page="stats-page" onclick="switchPage(this)">
+    <span class="nav-icon">📈</span><span>统计</span>
+  </button>
+  <button class="nav-item" data-page="settings-page" onclick="switchPage(this)">
+    <span class="nav-icon">⚙️</span><span>设置</span>
+  </button>
+</div>
+
+<!-- Day sheet -->
+<div class="overlay" id="day-overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="day-hdr">
+      <div class="day-date-big" id="day-date-big"></div>
+      <button class="day-add-btn" id="day-add-btn">＋ 记录</button>
+    </div>
+    <div id="day-entries"></div>
+  </div>
+</div>
+
+<!-- Add sheet -->
+<div class="overlay" id="add-overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">记录咖啡</div>
+    <div class="f-section">
+      <label class="f-label">拍照识别（可选）</label>
+      <div class="photo-zone" id="photo-zone">
+        <div class="pz-icon">📷</div>
+        <div class="pz-text">拍照 / 从相册选择</div>
+        <div class="pz-hint">AI 自动识别类型</div>
+      </div>
+      <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none">
+    </div>
+    <div class="f-section">
+      <label class="f-label">咖啡类型 *</label>
+      <div class="cat-scroll" id="cat-scroll"></div>
+      <div class="chips" id="type-chips"></div>
+      <div id="custom-type-wrap">
+        <input type="text" id="custom-type-input" placeholder="输入咖啡名称…" maxlength="20">
+        <button id="custom-type-confirm">确认</button>
+      </div>
+    </div>
+    <div class="f-section">
+      <label class="f-label">杯型 *</label>
+      <div class="chips" id="size-chips"></div>
+    </div>
+    <div class="f-section">
+      <label class="f-label">冰 / 热</label>
+      <div class="chips" id="temp-chips"></div>
+    </div>
+    <div class="f-section" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label class="f-label">价格 (¥) *</label><input type="number" class="f-input" id="price-input" placeholder="35"></div>
+      <div><label class="f-label">咖啡因 (mg)</label><input type="number" class="f-input" id="caff-input" placeholder="自动"></div>
+    </div>
+    <div class="f-section">
+      <label class="f-label">备注</label>
+      <textarea class="f-input" id="notes-input" rows="2" placeholder="口感、改动、地点…"></textarea>
+    </div>
+    <button class="save-btn" id="save-btn" disabled>☕ 保存记录</button>
+  </div>
+</div>
+
+<!-- Switch user overlay -->
+<div class="overlay" id="switch-overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">切换账户</div>
+    <div id="switch-user-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:10px">创建新账户</div>
+
+    <!-- Emoji grid in switch overlay -->
+    <div style="font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">选择头像</div>
+    <div id="sw-emoji-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-bottom:8px"></div>
+    <div id="sw-avatar-upload-zone" style="border:2px dashed var(--border);border-radius:10px;padding:10px;text-align:center;cursor:pointer;background:var(--bg2);margin-bottom:8px">
+      <div style="font-size:12px;color:var(--text3)">📁 上传头像</div>
+    </div>
+    <input type="file" id="sw-avatar-upload-input" accept="image/*" style="display:none">
+    <div id="sw-avatar-preview-wrap" style="display:none;margin-bottom:8px;align-items:center;gap:8px">
+      <img id="sw-avatar-preview-img" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--accent2)">
+      <span style="font-size:12px;color:var(--text2)">已选自定义头像</span>
+      <button id="sw-avatar-clear-btn" style="background:none;border:none;font-size:11px;color:var(--text3);cursor:pointer;margin-left:auto">重选</button>
+    </div>
+
+    <input class="f-input" id="sw-name-input" placeholder="新昵称" maxlength="10" style="margin-bottom:10px">
+    <div style="font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">设置 PIN 码</div>
+    <div id="sw-create-pin-dots" style="display:flex;gap:12px;justify-content:center;margin-bottom:12px"></div>
+    <div id="sw-create-pin-pad" class="pin-pad" style="margin-bottom:12px"></div>
+    <button class="save-btn" id="sw-create-btn" disabled>创建账户</button>
+  </div>
+</div>
+
+<!-- PIN verify overlay (for switch) -->
+<div class="overlay" id="pin-verify-overlay">
+  <div class="sheet" style="padding-bottom:40px">
+    <div class="sheet-handle"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:8px">
+      <div id="pv-avatar" style="width:68px;height:68px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;background:var(--bg2);overflow:hidden"></div>
+      <div style="font-size:18px;font-weight:700;color:var(--text)" id="pv-name"></div>
+      <div style="font-size:13px;color:var(--text3)">输入 PIN 码</div>
+      <div id="pv-pin-dots" style="display:flex;gap:12px;justify-content:center"></div>
+      <div id="pv-pin-pad" class="pin-pad"></div>
+      <div id="pv-error" style="font-size:13px;color:var(--red);min-height:18px;text-align:center"></div>
+      <button id="pv-cancel-btn" style="background:none;border:none;font-size:13px;color:var(--text3);cursor:pointer">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete account overlay -->
+<div class="overlay" id="delete-overlay">
+  <div class="sheet" style="padding-bottom:40px">
+    <div class="sheet-handle"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:4px">
+
+      <!-- Step 1: confirm intent -->
+      <div id="del-step1" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:14px">
+        <div style="font-size:40px">⚠️</div>
+        <div style="font-size:20px;font-weight:700;color:var(--text)">注销账户</div>
+        <div id="del-user-preview" style="display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 16px;width:100%">
+          <div id="del-avatar" style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--bg3);overflow:hidden;flex-shrink:0"></div>
+          <div>
+            <div id="del-username" style="font-size:15px;font-weight:600;color:var(--text)"></div>
+            <div id="del-record-count" style="font-size:12px;color:var(--text3);margin-top:2px"></div>
+          </div>
+        </div>
+        <div style="background:#fff5f5;border:1px solid #fcc;border-radius:12px;padding:14px 16px;width:100%">
+          <div style="font-size:13px;color:#b04040;line-height:1.6">
+            🗑️ 账户及所有咖啡记录将被<strong>永久删除</strong><br>
+            📊 统计数据、照片一并清除<br>
+            🔒 此操作<strong>无法撤销</strong>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;width:100%">
+          <button id="del-cancel-btn" style="flex:1;background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;padding:13px;font-size:15px;color:var(--text2);cursor:pointer;font-family:inherit">取消</button>
+          <button id="del-next-btn" style="flex:1;background:#c03030;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit">继续</button>
+        </div>
+      </div>
+
+      <!-- Step 2: PIN verification -->
+      <div id="del-step2" style="width:100%;display:none;flex-direction:column;align-items:center;gap:14px">
+        <div style="font-size:14px;color:var(--text2);text-align:center">请输入 PIN 码确认注销<br><span style="font-size:12px;color:var(--text3)">验证你是本人操作</span></div>
+        <div id="del-pin-dots" style="display:flex;gap:12px;justify-content:center"></div>
+        <div id="del-pin-pad" class="pin-pad" style="width:100%"></div>
+        <div id="del-pin-error" style="font-size:13px;color:var(--red);min-height:18px;text-align:center"></div>
+        <button id="del-back-btn" style="background:none;border:none;font-size:13px;color:var(--text3);cursor:pointer">← 返回</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Admin: Reset PIN overlay -->
+<div class="overlay" id="admin-reset-overlay">
+  <div class="sheet" style="padding-bottom:40px">
+    <div class="sheet-handle"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:4px">
+
+      <!-- Step 1: admin verifies identity -->
+      <div id="ar-step1" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:14px">
+        <div style="font-size:16px;font-weight:700;color:var(--text);width:100%">管理员验证身份</div>
+        <div id="ar-target-card" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+          <div id="ar-target-avatar" style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--bg3);overflow:hidden;flex-shrink:0"></div>
+          <div>
+            <div id="ar-target-name" style="font-size:14px;font-weight:600;color:var(--text)"></div>
+            <div style="font-size:11px;color:var(--text3);margin-top:1px">将为此用户重置 PIN 码</div>
+          </div>
+        </div>
+        <div style="font-size:13px;color:var(--text2);text-align:center">请输入你（管理员）的 PIN 码确认</div>
+        <div id="ar-admin-pin-dots" style="display:flex;gap:12px;justify-content:center"></div>
+        <div id="ar-admin-pin-pad" class="pin-pad" style="width:100%"></div>
+        <div id="ar-admin-error" style="font-size:13px;color:var(--red);min-height:18px;text-align:center"></div>
+        <button id="ar-cancel-btn" style="background:none;border:none;font-size:13px;color:var(--text3);cursor:pointer">取消</button>
+      </div>
+
+      <!-- Step 2: set new PIN for target user -->
+      <div id="ar-step2" style="width:100%;display:none;flex-direction:column;align-items:center;gap:14px">
+        <div style="font-size:16px;font-weight:700;color:var(--text);width:100%">设置新 PIN 码</div>
+        <div style="font-size:13px;color:var(--text2);text-align:center">为 <strong id="ar-target-name2"></strong> 设置一个新 PIN</div>
+        <div id="ar-new-pin-dots" style="display:flex;gap:12px;justify-content:center"></div>
+        <div id="ar-new-pin-pad" class="pin-pad" style="width:100%"></div>
+        <div style="font-size:12px;color:var(--text3);text-align:center">设置后请通知用户新的 PIN 码</div>
+        <button id="ar-step2-cancel-btn" style="background:none;border:none;font-size:13px;color:var(--text3);cursor:pointer">取消</button>
+      </div>
+
+      <!-- Step 3: success -->
+      <div id="ar-step3" style="width:100%;display:none;flex-direction:column;align-items:center;gap:16px;padding:16px 0">
+        <div style="font-size:48px">✅</div>
+        <div style="font-size:18px;font-weight:700;color:var(--text)">重置成功</div>
+        <div style="font-size:13px;color:var(--text2);text-align:center">已为 <strong id="ar-success-name"></strong><br>成功设置新 PIN 码</div>
+        <div style="background:#f0faf4;border:1px solid #a0d8b0;border-radius:12px;padding:14px;width:100%;font-size:13px;color:#2a6040;text-align:center">
+          请告知用户新的 PIN 码，他们可以在登录后前往设置修改
+        </div>
+        <button id="ar-done-btn" class="save-btn" style="margin-top:4px">完成</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Admin: Delete user overlay -->
+<div class="overlay" id="admin-delete-overlay">
+  <div class="sheet" style="padding-bottom:40px">
+    <div class="sheet-handle"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:4px">
+
+      <div id="adel-step1" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:14px">
+        <div style="font-size:36px">⚠️</div>
+        <div style="font-size:17px;font-weight:700;color:var(--text)">管理员删除用户</div>
+        <div id="adel-target-card" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+          <div id="adel-target-avatar" style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--bg3);overflow:hidden;flex-shrink:0"></div>
+          <div>
+            <div id="adel-target-name" style="font-size:14px;font-weight:600;color:var(--text)"></div>
+            <div id="adel-target-count" style="font-size:11px;color:var(--text3);margin-top:1px"></div>
+          </div>
+        </div>
+        <div style="background:#fff5f5;border:1px solid #fcc;border-radius:12px;padding:12px;width:100%;font-size:13px;color:#b04040;line-height:1.6">
+          此操作将<strong>永久删除</strong>该用户账户及所有咖啡记录，无法撤销
+        </div>
+        <div style="font-size:13px;color:var(--text2)">请输入管理员 PIN 码确认</div>
+        <div id="adel-pin-dots" style="display:flex;gap:12px;justify-content:center"></div>
+        <div id="adel-pin-pad" class="pin-pad" style="width:100%"></div>
+        <div id="adel-error" style="font-size:13px;color:var(--red);min-height:18px;text-align:center"></div>
+        <button id="adel-cancel-btn" style="background:none;border:none;font-size:13px;color:var(--text3);cursor:pointer">取消</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ══ MENU DATA ═════════════════════════════════════════════════════════════
+const MENU = {
+  "浓缩系列":[
+    {n:"浓缩 Espresso",c:64},{n:"美式 Americano",c:150},{n:"拿铁 Latte",c:75},
+    {n:"卡布奇诺",c:75},{n:"馥芮白",c:130},{n:"澳白",c:130},{n:"玛奇朵",c:75},{n:"焦糖玛奇朵",c:75}
+  ],
+  "冷萃 / 冰滴":[
+    {n:"冷萃 Cold Brew",c:200},{n:"氮气冷萃",c:215},{n:"冰滴",c:180}
+  ],
+  "风味特调":[
+    {n:"摩卡 Mocha",c:95},{n:"榛果拿铁",c:75},{n:"香草拿铁",c:75},
+    {n:"焦糖拿铁",c:75},{n:"抹茶拿铁",c:55},{n:"燕麦拿铁",c:75},{n:"黑糖拿铁",c:75}
+  ],
+  "手冲 / 其他":[
+    {n:"手冲 Pour Over",c:140},{n:"虹吸咖啡",c:120},{n:"伯爵茶拿铁",c:30},{n:"其他",c:80}
+  ],
+};
+const SIZES=["Short","Tall","Grande","Venti"];
+const TEMPS=["冰","热","温"];
+const WDS=["日","一","二","三","四","五","六"];
+const MONTHS=["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"];
+const WEATHERS=[{e:"☀️",l:"晴天"},{e:"⛅",l:"多云"},{e:"🌧️",l:"下雨"},{e:"❄️",l:"下雪"},{e:"🌫️",l:"阴天"}];
+const AVATAR_COLORS=["#c47a35","#6ab4f0","#6abf7a","#e07070","#b470c8","#d4a844"];
+
+const ALL_EMOJIS = [
+  "☕","🧋","🫖","🍵","🥤","🍶","🧃","🫗",
+  "🐱","🐶","🦊","🐼","🐨","🐯","🦁","🐸",
+  "🐙","🦄","🐰","🐻","🐧","🦋","🌸","🌺",
+  "🌙","⭐","🌈","🍀","🌻","🌿","🍁","❄️",
+  "🍰","🧁","🍩","🍪","🎂","🍫","🍬","🍭",
+  "😺","🥰","😎","🤓","🥳","🫶","✨","🎯",
+  "🏄","🎸","🎨","📷","🎮","🚀","🌊","🏔️"
+];
+
+// ── Daily slogans (Starbucks/Manner style) ─────────────────────────────────
+const SLOGANS = [
+  "今天也要好好喝咖啡 ☕",
+  "每一杯，都值得被记住",
+  "用咖啡开启美好的一天",
+  "在这里，每杯咖啡都有故事",
+  "认真对待每一杯，就像对待生活",
+  "慢下来，喝一杯好咖啡",
+  "咖啡是今天最温柔的开始",
+  "第三空间从这杯开始",
+  "不只是咖啡，是仪式感",
+  "把普通的一天过得有味道",
+  "好咖啡值得被认真记录",
+  "今天的咖啡，明天的回忆",
+  "给自己一点甜，一点苦，刚刚好",
+  "每一口都是当下",
+  "用心冲，认真喝，好好记",
+  "Sip by sip，一天一天",
+  "今天你选哪一杯？",
+  "美好的事需要被记录",
+  "咖啡时间，属于自己的时间",
+  "记录喝咖啡，也是记录生活",
+  "一杯咖啡，一段专注",
+  "把每天喝的咖啡都变成诗",
+  "从这杯咖啡开始，今天会很好",
+  "喝完这杯，元气满满",
+  "好喝的咖啡不应该被遗忘",
+  "今天的咖啡有多好喝？",
+  "探索每一种风味的可能",
+  "咖啡和朋友，都不能少",
+];
+
+function getDailySlogan() {
+  const d = new Date();
+  const idx = (d.getFullYear() * 400 + d.getMonth() * 31 + d.getDate()) % SLOGANS.length;
+  return SLOGANS[idx];
+}
+
+// ══ STORAGE ═══════════════════════════════════════════════════════════════
+let currentUser = null;
+let localRecords = {};
+let allUsers = {};
+
+async function loadUsers() {
+  try { const r=await window.storage.get("users",true); allUsers=r?JSON.parse(r.value):{}; } catch { allUsers={}; }
+}
+async function saveUsers() { await window.storage.set("users",JSON.stringify(allUsers),true); }
+async function loadUserRecords(uid) {
+  try { const r=await window.storage.get("records:"+uid,true); return r?JSON.parse(r.value):{}; } catch { return {}; }
+}
+async function saveUserRecords() { await window.storage.set("records:"+currentUser.uid,JSON.stringify(localRecords),true); }
+async function getAllUsersRecords() {
+  const result={};
+  for(const uid of Object.keys(allUsers)) result[uid]=await loadUserRecords(uid);
+  return result;
+}
+
+// ══ HELPERS ═══════════════════════════════════════════════════════════════
+const todayStr=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+const dateKey=(y,m,d)=>`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+const fmtDate=s=>{const[y,m,d]=s.split("-");return `${y}年${parseInt(m)}月${parseInt(d)}日`;};
+const isWeekend=()=>[0,6].includes(new Date().getDay());
+const isWorkday=()=>!isWeekend();
+const getCaff=name=>{for(const items of Object.values(MENU)){const it=items.find(i=>i.n===name);if(it)return it.c;}return 80;};
+function uid(){return Math.random().toString(36).slice(2,10);}
+
+// Simple hash for PIN storage (not cryptographic, just obfuscation)
+function hashPin(pin){let h=0;for(const c of pin){h=(h<<5)-h+c.charCodeAt(0);h|=0;}return h.toString(36);}
+
+// ══ PIN PAD ════════════════════════════════════════════════════════════════
+function buildPinPad(padEl, dotsEl, maxLen, onComplete) {
+  let val = "";
+  const updateDots = () => {
+    dotsEl.innerHTML = "";
+    for(let i=0;i<maxLen;i++){const d=document.createElement("div");d.className="pin-dot"+(i<val.length?" filled":"");dotsEl.appendChild(d);}
+  };
+  const nums=["1","2","3","4","5","6","7","8","9","","0","⌫"];
+  padEl.innerHTML="";
+  nums.forEach(n=>{
+    const btn=document.createElement("button");
+    btn.className="pin-btn"+(n==="⌫"?" del":"");
+    btn.textContent=n;
+    if(!n){btn.style.visibility="hidden";}
+    btn.addEventListener("click",()=>{
+      if(n==="⌫"){val=val.slice(0,-1);}
+      else if(val.length<maxLen){val+=n;}
+      updateDots();
+      if(val.length===maxLen) setTimeout(()=>onComplete(val),120);
+    });
+    padEl.appendChild(btn);
+  });
+  updateDots();
+  return {reset:()=>{val="";updateDots();}};
+}
+
+// ══ LOGIN FLOW ═════════════════════════════════════════════════════════════
+let vYear=new Date().getFullYear(), vMonth=new Date().getMonth(), selDate=null;
+let fType="",fSize="Grande",fTemp="热",fCat=Object.keys(MENU)[0];
+let fPhoto=null,fPhotoPreview=null,fPhotoMime=null;
+let statsUid=null;
+let pendingLoginUid=null;
+
+// State for create form
+let createAvatarEmoji="☕", createAvatarImage=null, createPin="";
+
+function buildEmojiGrid(containerId, selectedRef, onChange) {
+  const el=document.getElementById(containerId); if(!el)return;
+  el.innerHTML="";
+  ALL_EMOJIS.forEach(e=>{
+    const btn=document.createElement("button");
+    btn.className="emoji-btn"+(e===selectedRef()?" on":"");
+    btn.textContent=e;
+    btn.addEventListener("click",()=>{
+      onChange(e);
+      el.querySelectorAll(".emoji-btn").forEach(b=>b.classList.remove("on"));
+      btn.classList.add("on");
+    });
+    el.appendChild(btn);
+  });
+}
+
+async function initLogin() {
+  document.getElementById("daily-slogan").textContent=getDailySlogan();
+  await loadUsers();
+  const uids=Object.keys(allUsers);
+
+  if(uids.length>0){
+    document.getElementById("existing-users").style.display="flex";
+    document.getElementById("login-divider").style.display="flex";
+    const container=document.getElementById("existing-users");
+    uids.forEach(id=>{
+      const u=allUsers[id];
+      const ci=uids.indexOf(id)%AVATAR_COLORS.length;
+      const btn=document.createElement("button");
+      btn.className="user-btn";
+      const avatarHTML=u.avatarImage
+        ?`<img src="${u.avatarImage}" style="width:36px;height:36px;border-radius:50%;object-fit:cover">`
+        :`<div style="width:36px;height:36px;border-radius:50%;background:${AVATAR_COLORS[ci]}18;color:${AVATAR_COLORS[ci]};display:flex;align-items:center;justify-content:center;font-size:18px">${u.avatar||'☕'}</div>`;
+      btn.innerHTML=`${avatarHTML}<span style="flex:1">${u.name}</span><span style="font-size:11px;color:var(--text3)">›</span>`;
+      btn.addEventListener("click",()=>showPinVerify(id));
+      container.appendChild(btn);
+    });
+  }
+
+  // Show create form button
+  document.getElementById("show-create-btn").addEventListener("click",()=>showCreateForm());
+
+  // Build create emoji grid
+  buildEmojiGrid("emoji-grid",()=>createAvatarEmoji,(e)=>{createAvatarEmoji=e;createAvatarImage=null;document.getElementById("avatar-preview-wrap").style.display="none";});
+
+  // Avatar upload
+  document.getElementById("avatar-upload-zone").addEventListener("click",()=>document.getElementById("avatar-upload-input").click());
+  document.getElementById("avatar-upload-input").addEventListener("change",e=>{
+    const file=e.target.files[0]; if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      createAvatarImage=ev.target.result;
+      document.getElementById("avatar-preview-img").src=createAvatarImage;
+      document.getElementById("avatar-preview-wrap").style.display="flex";
+      // deselect emoji
+      document.querySelectorAll("#emoji-grid .emoji-btn").forEach(b=>b.classList.remove("on"));
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById("avatar-clear-btn").addEventListener("click",()=>{
+    createAvatarImage=null;
+    document.getElementById("avatar-preview-wrap").style.display="none";
+    document.getElementById("avatar-upload-input").value="";
+  });
+
+  // Back button
+  document.getElementById("ls-back-btn").addEventListener("click",()=>{
+    document.getElementById("ls-create").style.display="none";
+    document.getElementById("ls-main").style.display="flex";
+  });
+  document.getElementById("verify-back-btn").addEventListener("click",()=>{
+    document.getElementById("ls-verify").style.display="none";
+    document.getElementById("ls-main").style.display="flex";
+  });
+
+  // Forgot PIN
+  document.getElementById("forgot-pin-btn").addEventListener("click",()=>showForgotPin());
+  document.getElementById("forgot-back-btn").addEventListener("click",()=>{
+    document.getElementById("ls-forgot").style.display="none";
+    document.getElementById("ls-verify").style.display="flex";
+  });
+
+  // PIN for create
+  const createPad=buildPinPad(
+    document.getElementById("create-pin-pad"),
+    document.getElementById("create-pin-dots"),
+    4,
+    (pin)=>{createPin=pin;checkCreateReady();}
+  );
+
+  // Name input
+  document.getElementById("name-input").addEventListener("input",checkCreateReady);
+
+  // Confirm create
+  document.getElementById("create-confirm-btn").addEventListener("click",doCreate);
+}
+
+function checkCreateReady(){
+  const name=document.getElementById("name-input").value.trim();
+  document.getElementById("create-confirm-btn").disabled=!name||createPin.length!==4;
+}
+
+function showCreateForm(){
+  createAvatarEmoji="☕"; createAvatarImage=null; createPin="";
+  document.getElementById("name-input").value="";
+  document.getElementById("avatar-preview-wrap").style.display="none";
+  document.getElementById("ls-main").style.display="none";
+  document.getElementById("ls-create").style.display="flex";
+  document.getElementById("ls-verify").style.display="none";
+  // rebuild pin dots
+  buildPinPad(document.getElementById("create-pin-pad"),document.getElementById("create-pin-dots"),4,(pin)=>{createPin=pin;checkCreateReady();});
+  buildEmojiGrid("emoji-grid",()=>createAvatarEmoji,(e)=>{createAvatarEmoji=e;createAvatarImage=null;document.getElementById("avatar-preview-wrap").style.display="none";});
+}
+
+async function doCreate(){
+  const name=document.getElementById("name-input").value.trim();
+  if(!name||createPin.length!==4)return;
+  const id=uid();
+  const ci=Object.keys(allUsers).length%AVATAR_COLORS.length;
+  const isFirstUser=Object.keys(allUsers).length===0;
+  allUsers[id]={name,avatar:createAvatarEmoji,avatarImage:createAvatarImage||null,pinHash:hashPin(createPin),color:AVATAR_COLORS[ci],isAdmin:isFirstUser,createdAt:Date.now()};
+  await saveUsers();
+  await loginAs(id);
+}
+
+// ── Forgot PIN ──────────────────────────────────────────────────────────────
+function showForgotPin(){
+  // Find the admin user
+  const adminEntry=Object.entries(allUsers).find(([,u])=>u.isAdmin);
+  const adminCard=document.getElementById("forgot-admin-card");
+  if(!adminEntry){
+    adminCard.innerHTML=`<div style="font-size:13px;color:var(--text3)">暂无管理员，无法重置 PIN</div>`;
+  } else {
+    const [aid,au]=adminEntry;
+    const ci=Object.keys(allUsers).indexOf(aid)%AVATAR_COLORS.length;
+    const avHTML=au.avatarImage
+      ?`<img src="${au.avatarImage}" style="width:40px;height:40px;border-radius:50%;object-fit:cover">`
+      :`<div style="width:40px;height:40px;border-radius:50%;background:${AVATAR_COLORS[ci]}18;color:${AVATAR_COLORS[ci]};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${au.avatar||'☕'}</div>`;
+    adminCard.innerHTML=`${avHTML}<div><div style="font-size:14px;font-weight:600;color:var(--text)">${au.name}</div><div style="font-size:11px;color:var(--accent);margin-top:2px">👑 管理员</div></div>`;
+  }
+  document.getElementById("ls-verify").style.display="none";
+  document.getElementById("ls-forgot").style.display="flex";
+}
+
+// ── Admin panel ─────────────────────────────────────────────────────────────
+let adminResetTargetId=null, adminDeleteTargetId=null;
+
+function renderAdminPanel(){
+  const isAdmin=currentUser?.isAdmin;
+  document.getElementById("admin-section").style.display=isAdmin?"block":"none";
+  if(!isAdmin)return;
+
+  const list=document.getElementById("admin-user-list");
+  list.innerHTML="";
+
+  Object.entries(allUsers).forEach(([id,u])=>{
+    const ci=Object.keys(allUsers).indexOf(id)%AVATAR_COLORS.length;
+    const isMe=id===currentUser.uid;
+    const row=document.createElement("div");
+    row.className="set-row";
+    row.style.cssText="flex-wrap:wrap;gap:8px;align-items:center;padding:12px 14px";
+
+    const avHTML=u.avatarImage
+      ?`<img src="${u.avatarImage}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0">`
+      :`<div style="width:36px;height:36px;border-radius:50%;background:${AVATAR_COLORS[ci]}18;color:${AVATAR_COLORS[ci]};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${u.avatar||'☕'}</div>`;
+
+    const namePart=document.createElement("div");
+    namePart.style.cssText="display:flex;align-items:center;gap:8px;flex:1;min-width:0";
+    namePart.innerHTML=`${avHTML}<div style="min-width:0"><div style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.name}${u.isAdmin?' <span style="font-size:10px;color:var(--accent)">👑</span>':''}${isMe?' <span style="font-size:10px;color:var(--text3)">(我)</span>':''}</div></div>`;
+
+    const btnGroup=document.createElement("div");
+    btnGroup.style.cssText="display:flex;gap:6px;flex-shrink:0";
+
+    if(!isMe){
+      // Reset PIN button
+      const resetBtn=document.createElement("button");
+      resetBtn.textContent="重置 PIN";
+      resetBtn.style.cssText="background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;color:var(--text2);cursor:pointer;font-family:inherit";
+      resetBtn.addEventListener("click",()=>openAdminReset(id));
+      btnGroup.appendChild(resetBtn);
+
+      // Delete user button
+      const delBtn=document.createElement("button");
+      delBtn.textContent="删除";
+      delBtn.style.cssText="background:#fff5f5;border:1.5px solid #fcc;border-radius:8px;padding:5px 10px;font-size:12px;color:var(--red);cursor:pointer;font-family:inherit";
+      delBtn.addEventListener("click",()=>openAdminDelete(id));
+      btnGroup.appendChild(delBtn);
+    } else {
+      const meTag=document.createElement("span");
+      meTag.style.cssText="font-size:11px;color:var(--text3)";
+      meTag.textContent="当前账户";
+      btnGroup.appendChild(meTag);
+    }
+
+    row.appendChild(namePart);
+    row.appendChild(btnGroup);
+    list.appendChild(row);
+  });
+}
+
+function avatarHTMLForUser(id){
+  const u=allUsers[id]; if(!u)return '';
+  const ci=Object.keys(allUsers).indexOf(id)%AVATAR_COLORS.length;
+  return u.avatarImage
+    ?`<img src="${u.avatarImage}" style="width:100%;height:100%;object-fit:cover">`
+    :`<span style="font-size:20px;color:${AVATAR_COLORS[ci]}">${u.avatar||'☕'}</span>`;
+}
+
+// Admin: open reset PIN for a target user
+function openAdminReset(targetId){
+  adminResetTargetId=targetId;
+  const u=allUsers[targetId];
+  // populate target card
+  const ci=Object.keys(allUsers).indexOf(targetId)%AVATAR_COLORS.length;
+  const avHTML=u.avatarImage
+    ?`<img src="${u.avatarImage}" style="width:100%;height:100%;object-fit:cover">`
+    :`<span style="font-size:20px">${u.avatar||'☕'}</span>`;
+  document.getElementById("ar-target-avatar").innerHTML=avHTML;
+  document.getElementById("ar-target-name").textContent=u.name;
+  document.getElementById("ar-target-name2").textContent=u.name;
+  document.getElementById("ar-success-name").textContent=u.name;
+  document.getElementById("ar-admin-error").textContent="";
+  // show step 1
+  document.getElementById("ar-step1").style.display="flex";
+  document.getElementById("ar-step2").style.display="none";
+  document.getElementById("ar-step3").style.display="none";
+  // build admin PIN pad
+  buildPinPad(document.getElementById("ar-admin-pin-pad"),document.getElementById("ar-admin-pin-dots"),4,async(pin)=>{
+    if(hashPin(pin)===currentUser.pinHash){
+      // admin verified — move to step 2
+      document.getElementById("ar-step1").style.display="none";
+      document.getElementById("ar-step2").style.display="flex";
+      let newPin="";
+      buildPinPad(document.getElementById("ar-new-pin-pad"),document.getElementById("ar-new-pin-dots"),4,async(p)=>{
+        newPin=p;
+        allUsers[adminResetTargetId].pinHash=hashPin(newPin);
+        await saveUsers();
+        document.getElementById("ar-step2").style.display="none";
+        document.getElementById("ar-step3").style.display="flex";
+      });
+    } else {
+      document.getElementById("ar-admin-error").textContent="管理员 PIN 错误，请重试";
+      setTimeout(()=>{document.getElementById("ar-admin-error").textContent="";buildPinPad(document.getElementById("ar-admin-pin-pad"),document.getElementById("ar-admin-pin-dots"),4,arguments.callee);},800);
+    }
+  });
+  showOverlay("admin-reset-overlay");
+}
+
+document.getElementById("ar-cancel-btn").addEventListener("click",()=>hideOverlay("admin-reset-overlay"));
+document.getElementById("ar-step2-cancel-btn").addEventListener("click",()=>hideOverlay("admin-reset-overlay"));
+document.getElementById("ar-done-btn").addEventListener("click",()=>{hideOverlay("admin-reset-overlay");renderAdminPanel();});
+document.getElementById("admin-reset-overlay").addEventListener("click",e=>{if(e.target===document.getElementById("admin-reset-overlay"))hideOverlay("admin-reset-overlay");});
+
+// Admin: open delete user
+function openAdminDelete(targetId){
+  adminDeleteTargetId=targetId;
+  const u=allUsers[targetId];
+  const ci=Object.keys(allUsers).indexOf(targetId)%AVATAR_COLORS.length;
+  const avHTML=u.avatarImage
+    ?`<img src="${u.avatarImage}" style="width:100%;height:100%;object-fit:cover">`
+    :`<span style="font-size:20px">${u.avatar||'☕'}</span>`;
+  document.getElementById("adel-target-avatar").innerHTML=avHTML;
+  document.getElementById("adel-target-name").textContent=u.name;
+  document.getElementById("adel-error").textContent="";
+  // record count (load async)
+  loadUserRecords(targetId).then(recs=>{
+    const cnt=Object.values(recs).reduce((s,es)=>s+es.length,0);
+    document.getElementById("adel-target-count").textContent=`共 ${cnt} 条咖啡记录`;
+  });
+  buildPinPad(document.getElementById("adel-pin-pad"),document.getElementById("adel-pin-dots"),4,async(pin)=>{
+    if(hashPin(pin)===currentUser.pinHash){
+      await doDeleteAccount(adminDeleteTargetId);
+      hideOverlay("admin-delete-overlay");
+      renderAdminPanel();
+    } else {
+      document.getElementById("adel-error").textContent="管理员 PIN 错误，请重试";
+      setTimeout(()=>{document.getElementById("adel-error").textContent="";buildPinPad(document.getElementById("adel-pin-pad"),document.getElementById("adel-pin-dots"),4,arguments.callee);},800);
+    }
+  });
+  showOverlay("admin-delete-overlay");
+}
+
+document.getElementById("adel-cancel-btn").addEventListener("click",()=>hideOverlay("admin-delete-overlay"));
+document.getElementById("admin-delete-overlay").addEventListener("click",e=>{if(e.target===document.getElementById("admin-delete-overlay"))hideOverlay("admin-delete-overlay");});
+
+// PIN verify on login screen (step 3)
+function showPinVerify(id){
+  pendingLoginUid=id;
+  const u=allUsers[id];
+  const ci=Object.keys(allUsers).indexOf(id)%AVATAR_COLORS.length;
+  const av=document.getElementById("verify-avatar");
+  if(u.avatarImage){av.innerHTML=`<img src="${u.avatarImage}" style="width:100%;height:100%;object-fit:cover">`;}
+  else{av.textContent=u.avatar||"☕";av.style.cssText+=`;background:${AVATAR_COLORS[ci]}18;color:${AVATAR_COLORS[ci]}`;}
+  document.getElementById("verify-name").textContent=u.name;
+  document.getElementById("verify-error").textContent="";
+  document.getElementById("ls-main").style.display="none";
+  document.getElementById("ls-create").style.display="none";
+  document.getElementById("ls-verify").style.display="flex";
+  buildPinPad(document.getElementById("verify-pin-pad"),document.getElementById("verify-pin-dots"),4,async(pin)=>{
+    if(hashPin(pin)===u.pinHash){document.getElementById("verify-error").textContent="";await loginAs(id);}
+    else{document.getElementById("verify-error").textContent="PIN 码错误，请重试";setTimeout(()=>{document.getElementById("verify-error").textContent="";buildPinPad(document.getElementById("verify-pin-pad"),document.getElementById("verify-pin-dots"),4,arguments.callee);},800);}
+  });
+}
+
+async function loginAs(id){
+  currentUser={uid:id,...allUsers[id]};
+  statsUid=id;
+  localRecords=await loadUserRecords(id);
+  document.getElementById("login-screen").style.display="none";
+  document.getElementById("pages").style.display="block";
+  document.getElementById("bottom-nav").style.display="flex";
+  updateUserBadge();
+  renderCalendar();
+  renderFriendsToday();
+  checkAndRecommend();
+}
+
+function updateUserBadge(){
+  const av=document.getElementById("badge-avatar");
+  if(currentUser.avatarImage){av.style.cssText=`width:24px;height:24px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center`;av.innerHTML=`<img src="${currentUser.avatarImage}" style="width:100%;height:100%;object-fit:cover">`;}
+  else{av.innerHTML=currentUser.avatar||"☕";av.style.cssText=`background:${currentUser.color}18;color:${currentUser.color};width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px`;}
+  const crownBadge=currentUser.isAdmin?' <span style="font-size:10px">👑</span>':'';
+  document.getElementById("badge-name").innerHTML=currentUser.name+crownBadge;
+  document.getElementById("set-username").textContent=`${currentUser.avatar||''} ${currentUser.name}${currentUser.isAdmin?' 👑':''}`;
+}
+
+// ── Switch user overlay (PIN-gated) ────────────────────────────────────────
+let swAvatarEmoji="☕", swAvatarImage=null, swCreatePin="";
+
+document.getElementById("switch-overlay").addEventListener("click",e=>{if(e.target===document.getElementById("switch-overlay"))hideOverlay("switch-overlay");});
+document.getElementById("pin-verify-overlay").addEventListener("click",e=>{if(e.target===document.getElementById("pin-verify-overlay"))hideOverlay("pin-verify-overlay");});
+document.getElementById("pv-cancel-btn").addEventListener("click",()=>hideOverlay("pin-verify-overlay"));
+
+function initSwOverlay(){
+  swAvatarEmoji="☕"; swAvatarImage=null; swCreatePin="";
+  document.getElementById("sw-name-input").value="";
+  document.getElementById("sw-avatar-preview-wrap").style.display="none";
+  buildEmojiGrid("sw-emoji-grid",()=>swAvatarEmoji,(e)=>{swAvatarEmoji=e;swAvatarImage=null;document.getElementById("sw-avatar-preview-wrap").style.display="none";});
+  buildPinPad(document.getElementById("sw-create-pin-pad"),document.getElementById("sw-create-pin-dots"),4,(pin)=>{swCreatePin=pin;checkSwCreateReady();});
+}
+
+function checkSwCreateReady(){
+  document.getElementById("sw-create-btn").disabled=!document.getElementById("sw-name-input").value.trim()||swCreatePin.length!==4;
+}
+
+document.getElementById("sw-name-input").addEventListener("input",checkSwCreateReady);
+
+document.getElementById("sw-avatar-upload-zone").addEventListener("click",()=>document.getElementById("sw-avatar-upload-input").click());
+document.getElementById("sw-avatar-upload-input").addEventListener("change",e=>{
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{swAvatarImage=ev.target.result;document.getElementById("sw-avatar-preview-img").src=swAvatarImage;document.getElementById("sw-avatar-preview-wrap").style.display="flex";document.querySelectorAll("#sw-emoji-grid .emoji-btn").forEach(b=>b.classList.remove("on"));};
+  reader.readAsDataURL(file);
+});
+document.getElementById("sw-avatar-clear-btn").addEventListener("click",()=>{swAvatarImage=null;document.getElementById("sw-avatar-preview-wrap").style.display="none";document.getElementById("sw-avatar-upload-input").value="";});
+
+document.getElementById("sw-create-btn").addEventListener("click",async()=>{
+  const name=document.getElementById("sw-name-input").value.trim();
+  if(!name||swCreatePin.length!==4)return;
+  const id=uid();
+  const ci=Object.keys(allUsers).length%AVATAR_COLORS.length;
+  const isFirstUser=Object.keys(allUsers).length===0;
+  allUsers[id]={name,avatar:swAvatarEmoji,avatarImage:swAvatarImage||null,pinHash:hashPin(swCreatePin),color:AVATAR_COLORS[ci],isAdmin:isFirstUser,createdAt:Date.now()};
+  await saveUsers();
+  hideOverlay("switch-overlay");
+  showPinVerifyOverlay(id);
+});
+
+function showPinVerifyOverlay(id){
+  pendingLoginUid=id;
+  const u=allUsers[id];
+  const ci=Object.keys(allUsers).indexOf(id)%AVATAR_COLORS.length;
+  const av=document.getElementById("pv-avatar");
+  if(u.avatarImage){av.innerHTML=`<img src="${u.avatarImage}" style="width:100%;height:100%;object-fit:cover">`;}
+  else{av.textContent=u.avatar||"☕";av.style.cssText+=`;background:${AVATAR_COLORS[ci]}18;color:${AVATAR_COLORS[ci]}`;}
+  document.getElementById("pv-name").textContent=u.name;
+  document.getElementById("pv-error").textContent="";
+  buildPinPad(document.getElementById("pv-pin-pad"),document.getElementById("pv-pin-dots"),4,async(pin)=>{
+    if(hashPin(pin)===u.pinHash){hideOverlay("pin-verify-overlay");await loginAs(id);}
+    else{document.getElementById("pv-error").textContent="PIN 码错误，请重试";setTimeout(()=>{document.getElementById("pv-error").textContent="";buildPinPad(document.getElementById("pv-pin-pad"),document.getElementById("pv-pin-dots"),4,arguments.callee);},800);}
+  });
+  showOverlay("pin-verify-overlay");
+}
+
+function renderSwitchList(){
+  initSwOverlay();
+  const container=document.getElementById("switch-user-list");
+  container.innerHTML="";
+  Object.entries(allUsers).forEach(([id,u])=>{
+    const ci=Object.keys(allUsers).indexOf(id)%AVATAR_COLORS.length;
+    const isActive=id===currentUser.uid;
+    const btn=document.createElement("button");
+    btn.className="user-btn";
+    btn.style.borderColor=isActive?"var(--accent)":"";
+    const avHTML=u.avatarImage?`<img src="${u.avatarImage}" style="width:36px;height:36px;border-radius:50%;object-fit:cover">`:`<div style="width:36px;height:36px;border-radius:50%;background:${AVATAR_COLORS[ci]}18;color:${AVATAR_COLORS[ci]};display:flex;align-items:center;justify-content:center;font-size:18px">${u.avatar||'☕'}</div>`;
+    btn.innerHTML=`${avHTML}<span style="flex:1">${u.name}</span>${isActive?'<span style="font-size:11px;color:var(--accent)">当前</span>':'<span style="font-size:13px;color:var(--text3)">›</span>'}`;
+    if(!isActive)btn.addEventListener("click",()=>{hideOverlay("switch-overlay");showPinVerifyOverlay(id);});
+    container.appendChild(btn);
+  });
+}
+
+// ══ CALENDAR ══════════════════════════════════════════════════════════════
+function renderCalendar() {
+  const td = todayStr();
+  const daysInMonth = new Date(vYear, vMonth+1, 0).getDate();
+  const firstDay = new Date(vYear, vMonth, 1).getDay();
+
+  const now = new Date();
+  document.getElementById("hdr-month").textContent = `${vMonth+1}月`;
+  document.getElementById("hdr-date").textContent = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 周${WDS[now.getDay()]}`;
+  document.getElementById("cal-label").textContent = `${vYear}年 ${MONTHS[vMonth]}`;
+
+  const prefix = `${vYear}-${String(vMonth+1).padStart(2,'0')}`;
+  let mCups = 0;
+  Object.entries(localRecords).forEach(([d,es]) => { if(d.startsWith(prefix)) mCups += es.length; });
+  document.getElementById("hdr-mcup").textContent = `本月 ${mCups} 杯`;
+
+  document.getElementById("weekday-row").innerHTML = WDS.map(d=>`<div class="wday">${d}</div>`).join("");
+
+  const dRow = document.getElementById("days-row");
+  dRow.innerHTML = "";
+  for (let i=0; i<firstDay; i++) { const e=document.createElement("div"); e.className="day-cell empty"; dRow.appendChild(e); }
+
+  for (let d=1; d<=daysInMonth; d++) {
+    const ds = dateKey(vYear, vMonth, d);
+    const recs = localRecords[ds] || [];
+    const isToday = ds === td;
+    const btn = document.createElement("button");
+    btn.className = "day-cell" + (isToday?" today":"") + (recs.length>0?" has-photo":"");
+
+    const photos = recs.filter(r=>r.photoPreview).map(r=>r.photoPreview);
+    if (photos.length >= 4) {
+      btn.classList.add("multi-photo");
+      const g = document.createElement("div"); g.className="grid2";
+      photos.slice(0,4).forEach(p => { const img=document.createElement("img"); img.src=p; g.appendChild(img); });
+      btn.appendChild(g);
+    } else if (photos.length >= 1) {
+      const img = document.createElement("img"); img.src=photos[0]; btn.appendChild(img);
+      if (recs.length > 1) { const ov=document.createElement("div"); ov.className="day-num-overlay"; ov.textContent=`×${recs.length}`; btn.appendChild(ov); }
+    } else {
+      const num = document.createElement("div"); num.className="day-num"; num.textContent=d; btn.appendChild(num);
+    }
+    btn.addEventListener("click", () => openDaySheet(ds));
+    dRow.appendChild(btn);
+  }
+  renderToday();
+}
+
+// ══ TODAY + FRIENDS ════════════════════════════════════════════════════════
+function renderToday() {
+  const td = todayStr();
+  const recs = localRecords[td] || [];
+  const totalCaff = recs.reduce((s,r)=>s+(r.caffeine||0),0);
+  document.getElementById("caff-val").textContent = totalCaff;
+  document.getElementById("caff-bar").style.width = Math.min(100,(totalCaff/400)*100)+"%";
+  const list = document.getElementById("today-list");
+  list.innerHTML = "";
+  if (!recs.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">🫗</div><div style="font-size:14px">今天还没有喝咖啡</div></div>`;
+    return;
+  }
+  recs.forEach(e => list.appendChild(buildEntryCard(e, td, true)));
+}
+
+async function renderFriendsToday() {
+  const td = todayStr();
+  const allRecs = await getAllUsersRecords();
+  const container = document.getElementById("friends-scroll");
+  container.innerHTML = "";
+
+  Object.entries(allUsers).forEach(([uid, u]) => {
+    const userRecs = (allRecs[uid] || {})[td] || [];
+    const ci = Object.keys(allUsers).indexOf(uid) % AVATAR_COLORS.length;
+    const card = document.createElement("div");
+    card.className = "friend-today-card";
+
+    const latestPhoto = userRecs.slice().reverse().find(r=>r.photoPreview)?.photoPreview;
+    const isMe = uid === currentUser.uid;
+    const ftAvHTML = latestPhoto
+      ? `<img class="friend-thumb" src="${latestPhoto}">`
+      : u.avatarImage
+        ? `<img style="width:36px;height:36px;border-radius:50%;object-fit:cover" src="${u.avatarImage}">`
+        : `<div class="friend-avatar" style="background:${AVATAR_COLORS[ci]}18;color:${AVATAR_COLORS[ci]}">${u.avatar||'☕'}</div>`;
+    card.innerHTML=`${ftAvHTML}<div class="friend-name">${isMe?"我":u.name}</div><div class="friend-cups">${userRecs.length?userRecs.length+"杯":"暂无"}</div>`;
+    container.appendChild(card);
+  });
+}
+
+// ══ AI RECOMMENDATION ═════════════════════════════════════════════════════
+let recWeather = "☀️";
+
+async function checkAndRecommend() {
+  // Count total records
+  const total = Object.values(localRecords).reduce((s,es)=>s+es.length,0);
+  const recBody = document.getElementById("rec-body");
+  const recCtx = document.getElementById("rec-context");
+
+  if (total < 10) {
+    recBody.innerHTML = `<span style="color:var(--text3);font-size:13px">再记录 ${10-total} 杯后，AI 将根据您的喜好、天气和今天是否工作日推荐今日咖啡 ✨</span>`;
+    recCtx.innerHTML = "";
+    return;
+  }
+
+  // Show weather picker + context
+  const workLabel = isWorkday() ? "🏢 工作日" : "🛋️ 休息日";
+  recCtx.innerHTML = `
+    <div class="ctx-tag">${workLabel}</div>
+    <div class="ctx-tag" id="weather-ctx-tag" style="cursor:pointer" onclick="showWeatherPicker()">🌤️ ${getWeatherLabel(recWeather)} <span style="font-size:9px;color:var(--text3);margin-left:2px">换</span></div>
+  `;
+  await generateRecommendation();
+}
+
+function getWeatherLabel(e) { return WEATHERS.find(w=>w.e===e)?.l || "晴天"; }
+
+function showWeatherPicker() {
+  // inline weather picker
+  const ctx = document.getElementById("rec-context");
+  const workLabel = isWorkday() ? "🏢 工作日" : "🛋️ 休息日";
+  ctx.innerHTML = `
+    <div class="ctx-tag">${workLabel}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      ${WEATHERS.map(w=>`<button onclick="selectWeather('${w.e}')" style="background:${recWeather===w.e?'var(--bg3)':'transparent'};border:1px solid ${recWeather===w.e?'var(--accent)':'#333'};border-radius:8px;padding:5px 8px;cursor:pointer;font-size:13px;color:var(--text2);font-family:inherit">${w.e} ${w.l}</button>`).join("")}
+    </div>
+  `;
+}
+
+async function selectWeather(e) {
+  recWeather = e;
+  const workLabel = isWorkday() ? "🏢 工作日" : "🛋️ 休息日";
+  document.getElementById("rec-context").innerHTML = `
+    <div class="ctx-tag">${workLabel}</div>
+    <div class="ctx-tag" id="weather-ctx-tag" style="cursor:pointer" onclick="showWeatherPicker()">${recWeather} ${getWeatherLabel(recWeather)} <span style="font-size:9px;color:var(--text3);margin-left:2px">换</span></div>
+  `;
+  await generateRecommendation();
+}
+
+async function generateRecommendation() {
+  const recBody = document.getElementById("rec-body");
+  recBody.innerHTML = `<div class="rec-loading"><span class="spin">⟳</span> AI 正在分析您的口味偏好…</div>`;
+
+  // Build preference summary
+  const allEntries = Object.values(localRecords).flat();
+  const typeCount = {};
+  const tempCount = {};
+  const sizeCount = {};
+  const weekdayEntries = [];
+  const weekendEntries = [];
+
+  Object.entries(localRecords).forEach(([ds, es]) => {
+    const dow = new Date(ds).getDay();
+    const isWd = dow >= 1 && dow <= 5;
+    es.forEach(e => {
+      typeCount[e.coffeeType] = (typeCount[e.coffeeType]||0)+1;
+      tempCount[e.temp] = (tempCount[e.temp]||0)+1;
+      sizeCount[e.size] = (sizeCount[e.size]||0)+1;
+      if (isWd) weekdayEntries.push(e); else weekendEntries.push(e);
+    });
+  });
+
+  const topTypes = Object.entries(typeCount).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,c])=>`${n}(${c}次)`).join("、");
+  const prefTemp = Object.entries(tempCount).sort((a,b)=>b[1]-a[1])[0]?.[0] || "热";
+  const prefSize = Object.entries(sizeCount).sort((a,b)=>b[1]-a[1])[0]?.[0] || "Grande";
+  const wdTopType = (() => { const c={}; weekdayEntries.forEach(e=>{c[e.coffeeType]=(c[e.coffeeType]||0)+1;}); return Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]||""; })();
+  const weTopType = (() => { const c={}; weekendEntries.forEach(e=>{c[e.coffeeType]=(c[e.coffeeType]||0)+1;}); return Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]||""; })();
+  const avgPrice = allEntries.length ? (allEntries.reduce((s,e)=>s+e.price,0)/allEntries.length).toFixed(0) : 35;
+  const today = new Date();
+  const hour = today.getHours();
+
+  const prompt = `你是一位专业的咖啡师助手，正在为用户推荐今日咖啡。
+
+用户历史数据（共${allEntries.length}条记录）：
+- 最常喝的咖啡：${topTypes}
+- 偏好温度：${prefTemp}（占比最高）
+- 偏好杯型：${prefSize}
+- 工作日常喝：${wdTopType || "无特别偏好"}
+- 休息日常喝：${weTopType || "无特别偏好"}
+- 平均价格：¥${avgPrice}
+
+今日情况：
+- 今天是：${isWorkday() ? "工作日" : "周末/休息日"}
+- 当前天气：${recWeather} ${getWeatherLabel(recWeather)}
+- 当前时间：${hour}点
+
+请根据以上信息，用中文给出**一个具体的今日咖啡推荐**，包含：
+1. 推荐的具体咖啡（从用户喜好中选择）
+2. 推荐理由（结合今天的天气、是否工作日、时间段）
+3. 一句温暖有趣的话
+
+格式要求：简洁，不超过80字，用自然口语，可以用emoji，不要用列表格式。`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514", max_tokens: 200,
+        messages: [{role:"user",content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || "今天适合喝一杯你喜欢的咖啡 ☕";
+    recBody.innerHTML = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+  } catch(e) {
+    recBody.innerHTML = `<span style="color:var(--text3)">推荐暂时不可用，请稍后再试</span>`;
+  }
+}
+
+document.getElementById("rec-refresh-btn").addEventListener("click", () => checkAndRecommend());
+
+// ══ DAY SHEET ═════════════════════════════════════════════════════════════
+function openDaySheet(ds) {
+  selDate = ds;
+  document.getElementById("day-date-big").textContent = fmtDate(ds);
+  renderDayEntries(ds);
+  showOverlay("day-overlay");
+}
+function renderDayEntries(ds) {
+  const recs = localRecords[ds]||[];
+  const container = document.getElementById("day-entries");
+  container.innerHTML = "";
+  if (!recs.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">☕</div><div style="font-size:14px">这天还没有记录</div></div>`;
+  } else {
+    recs.forEach(e => container.appendChild(buildEntryCard(e, ds, true)));
+    const tot = recs.reduce((s,e)=>s+e.price,0);
+    const el = document.createElement("div");
+    el.style.cssText="display:flex;justify-content:space-between;padding:12px 2px;font-size:13px;color:var(--text3);border-top:1px solid var(--border);margin-top:4px";
+    el.innerHTML=`<span>今日合计</span><span style="color:var(--accent)">¥${tot.toFixed(2)}</span>`;
+    container.appendChild(el);
+  }
+}
+
+function buildEntryCard(entry, ds, deletable) {
+  const card = document.createElement("div");
+  card.className = "entry-card fade-up";
+  const tc = entry.temp==="冰"?"ice":entry.temp==="热"?"hot":"";
+  card.innerHTML = `
+    ${entry.photoPreview?`<img class="entry-thumb" src="${entry.photoPreview}">`:`<div class="entry-icon-ph">☕</div>`}
+    <div class="entry-info">
+      <div class="entry-name">${entry.coffeeType}</div>
+      <div class="entry-sub">${entry.size} · ${entry.time}</div>
+      <div class="entry-tags">
+        <span class="etag ${tc}">${entry.temp}</span>
+        <span class="etag">¥${entry.price}</span>
+        ${entry.notes?`<span class="etag">${entry.notes.slice(0,12)}</span>`:""}
+      </div>
+    </div>
+    <div class="entry-right">
+      <div><div class="ecaff">${entry.caffeine||'?'}</div><div class="ecaff-u">mg</div></div>
+      ${deletable?`<button class="del-btn" data-id="${entry.id}">✕</button>`:""}
+    </div>
+  `;
+  if (deletable) {
+    card.querySelector(".del-btn").addEventListener("click", async (e) => {
+      e.stopPropagation();
+      localRecords[ds] = (localRecords[ds]||[]).filter(r=>r.id!==entry.id);
+      if (!localRecords[ds].length) delete localRecords[ds];
+      await saveUserRecords();
+      renderCalendar();
+      if (document.getElementById("day-overlay").classList.contains("show")) renderDayEntries(ds);
+      renderFriendsToday();
+    });
+  }
+  return card;
+}
+
+// ══ ADD SHEET ═════════════════════════════════════════════════════════════
+function openAddSheet() {
+  fType="";fSize="Grande";fTemp="热";fCat=Object.keys(MENU)[0];
+  fPhoto=null;fPhotoPreview=null;fPhotoMime=null;
+  document.getElementById("price-input").value="";
+  document.getElementById("caff-input").value="";
+  document.getElementById("notes-input").value="";
+  document.getElementById("custom-type-wrap").classList.remove("show");
+  document.getElementById("custom-type-input").value="";
+  resetPhotoZone();
+  renderCats();renderTypeChips();renderSizeChips();renderTempChips();
+  updateSave();
+  showOverlay("add-overlay");
+}
+function resetPhotoZone() {
+  document.getElementById("photo-zone").innerHTML=`<div class="pz-icon">📷</div><div class="pz-text">拍照 / 从相册选择</div><div class="pz-hint">AI 自动识别类型</div>`;
+  document.getElementById("photo-input").value="";
+}
+function renderCats(){
+  const el=document.getElementById("cat-scroll");el.innerHTML="";
+  Object.keys(MENU).forEach(cat=>{const btn=document.createElement("button");btn.className="cat-chip"+(cat===fCat?" on":"");btn.textContent=cat;btn.onclick=()=>{fCat=cat;renderCats();renderTypeChips();};el.appendChild(btn);});
+}
+function renderTypeChips(){
+  const el=document.getElementById("type-chips");el.innerHTML="";
+  MENU[fCat].forEach(item=>{const btn=document.createElement("button");btn.className="chip"+(fType===item.n?" on":"");btn.textContent=item.n;btn.onclick=()=>{
+    fType=item.n;
+    if(!document.getElementById("caff-input").value)document.getElementById("caff-input").value=item.c;
+    // show custom input only for "其他"
+    const wrap=document.getElementById("custom-type-wrap");
+    if(item.n==="其他"){wrap.classList.add("show");document.getElementById("custom-type-input").focus();}
+    else{wrap.classList.remove("show");document.getElementById("custom-type-input").value="";}
+    renderTypeChips();updateSave();
+  };el.appendChild(btn);});
+}
+
+// custom type confirm
+document.getElementById("custom-type-confirm").addEventListener("click",()=>{
+  const val=document.getElementById("custom-type-input").value.trim();
+  if(!val)return;
+  fType=val;
+  document.getElementById("custom-type-wrap").classList.remove("show");
+  // visually mark "其他" chip as showing custom value
+  const chips=document.getElementById("type-chips").querySelectorAll(".chip");
+  chips.forEach(c=>{c.classList.remove("on");if(c.textContent==="其他"){c.classList.add("on");c.textContent=`✓ ${val}`;}});
+  updateSave();
+});
+document.getElementById("custom-type-input").addEventListener("keydown",e=>{
+  if(e.key==="Enter")document.getElementById("custom-type-confirm").click();
+});
+function renderSizeChips(){
+  const el=document.getElementById("size-chips");el.innerHTML="";
+  SIZES.forEach(s=>{const btn=document.createElement("button");btn.className="chip"+(fSize===s?" on":"");btn.textContent=s;btn.onclick=()=>{fSize=s;renderSizeChips();};el.appendChild(btn);});
+}
+function renderTempChips(){
+  const el=document.getElementById("temp-chips");el.innerHTML="";
+  TEMPS.forEach(t=>{const btn=document.createElement("button");btn.className="chip"+(fTemp===t?" on":"");btn.textContent=t;btn.onclick=()=>{fTemp=t;renderTempChips();};el.appendChild(btn);});
+}
+function updateSave(){ document.getElementById("save-btn").disabled=!fType||!document.getElementById("price-input").value; }
+
+async function analyzePhoto(b64,mime){
+  const zone=document.getElementById("photo-zone");
+  const ov=document.createElement("div");ov.className="ai-overlay";ov.innerHTML=`<span class="spin">⟳</span> AI 识别中…`;zone.appendChild(ov);
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:300,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mime,data:b64}},{type:"text",text:`分析这张咖啡照片，JSON返回（只JSON不要其他）：{"coffeeType":"中文名","temp":"冰/热/温","notes":"20字以内"}`}]}]})});
+    const data=await res.json();
+    const r=JSON.parse((data.content?.[0]?.text||"{}").replace(/```json|```/g,"").trim());
+    if(r.coffeeType){for(const[cat,items]of Object.entries(MENU)){const m=items.find(i=>i.n.includes(r.coffeeType.split(" ")[0])||r.coffeeType.includes(i.n.split(" ")[0]));if(m){fType=m.n;fCat=cat;if(!document.getElementById("caff-input").value)document.getElementById("caff-input").value=m.c;break;}}renderCats();renderTypeChips();}
+    if(r.temp&&TEMPS.includes(r.temp)){fTemp=r.temp;renderTempChips();}
+    if(r.notes){const n=document.getElementById("notes-input");n.value=n.value?n.value+" "+r.notes:r.notes;}
+    updateSave();
+  }catch(e){console.error(e);}
+  ov.remove();
+}
+
+document.getElementById("photo-zone").addEventListener("click",()=>document.getElementById("photo-input").click());
+document.getElementById("photo-input").addEventListener("change",e=>{
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{fPhotoPreview=ev.target.result;fPhoto=fPhotoPreview.split(",")[1];fPhotoMime=file.type;document.getElementById("photo-zone").innerHTML=`<img src="${fPhotoPreview}">`;await analyzePhoto(fPhoto,fPhotoMime);};
+  reader.readAsDataURL(file);
+});
+document.getElementById("price-input").addEventListener("input",updateSave);
+
+document.getElementById("save-btn").addEventListener("click",async()=>{
+  const price=parseFloat(document.getElementById("price-input").value);
+  const caff=parseInt(document.getElementById("caff-input").value)||getCaff(fType);
+  const notes=document.getElementById("notes-input").value;
+  if(!fType||!price)return;
+  const entry={id:Date.now(),coffeeType:fType,size:fSize,temp:fTemp,price,caffeine:caff,notes,photoPreview:fPhotoPreview,time:new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"})};
+  if(!selDate)selDate=todayStr();
+  localRecords[selDate]=[...(localRecords[selDate]||[]),entry];
+  await saveUserRecords();
+  hideOverlay("add-overlay");
+  renderCalendar();
+  renderFriendsToday();
+  if(document.getElementById("day-overlay").classList.contains("show"))renderDayEntries(selDate);
+});
+
+// ══ STATS PAGE ════════════════════════════════════════════════════════════
+async function renderStats() {
+  const now = new Date();
+  if (!statsUid) statsUid = currentUser.uid;
+  const targetRecs = statsUid === currentUser.uid ? localRecords : await loadUserRecords(statsUid);
+  const u = allUsers[statsUid];
+
+  document.getElementById("stats-sub").textContent = `${u?.name || currentUser.name} · ${now.getFullYear()}年${now.getMonth()+1}月`;
+
+  // User tabs
+  const tabs = document.getElementById("stats-user-tabs");
+  tabs.innerHTML = "";
+  Object.entries(allUsers).forEach(([id, u]) => {
+    const btn = document.createElement("button");
+    btn.className = "cat-chip" + (id===statsUid?" on":"");
+    btn.innerHTML = `${u.avatar||'☕'} ${u.name}`;
+    btn.onclick = async () => { statsUid=id; await renderStats(); };
+    tabs.appendChild(btn);
+  });
+
+  const prefix = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const mEntries = Object.entries(targetRecs).filter(([d])=>d.startsWith(prefix)).flatMap(([,es])=>es);
+  const allEntries = Object.values(targetRecs).flat();
+  const mSpend = mEntries.reduce((s,e)=>s+e.price,0);
+  const mCaff = mEntries.reduce((s,e)=>s+(e.caffeine||0),0);
+  const avg = mEntries.length?(mSpend/mEntries.length).toFixed(1):0;
+
+  document.getElementById("stat-grid").innerHTML = `
+    <div class="stat-card"><div class="stat-icon">☕</div><div class="stat-val accent">${mEntries.length}</div><div class="stat-key">本月杯数</div></div>
+    <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-val">¥${mSpend.toFixed(0)}</div><div class="stat-key">本月花费</div></div>
+    <div class="stat-card"><div class="stat-icon">⚡</div><div class="stat-val">${mCaff}</div><div class="stat-key">本月咖啡因 mg</div></div>
+    <div class="stat-card"><div class="stat-icon">🧾</div><div class="stat-val">¥${avg}</div><div class="stat-key">平均单价</div></div>
+  `;
+
+  // week chart
+  const wc = document.getElementById("week-chart"); wc.innerHTML="";
+  const days7=[];
+  for(let i=6;i>=0;i--){const d=new Date(now);d.setDate(now.getDate()-i);const ds=dateKey(d.getFullYear(),d.getMonth(),d.getDate());days7.push({label:WDS[d.getDay()],count:(targetRecs[ds]||[]).length});}
+  const maxC=Math.max(1,...days7.map(d=>d.count));
+  days7.forEach(({label,count})=>{const col=document.createElement("div");col.className="chart-bar-col";const bar=document.createElement("div");bar.className="chart-bar";bar.style.height=`${(count/maxC)*100}%`;const lbl=document.createElement("div");lbl.className="chart-bar-label";lbl.textContent=label;col.appendChild(bar);col.appendChild(lbl);wc.appendChild(col);});
+
+  // type ranking
+  const tc={};allEntries.forEach(e=>{tc[e.coffeeType]=(tc[e.coffeeType]||0)+1;});
+  const sorted=Object.entries(tc).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxT=sorted[0]?.[1]||1;
+  const tl=document.getElementById("type-list");tl.innerHTML="";
+  sorted.forEach(([name,count])=>{const row=document.createElement("div");row.className="type-row";row.innerHTML=`<div class="type-name">${name.split(" ")[0]}</div><div class="type-bar-bg"><div class="type-bar-fill" style="width:${(count/maxT)*100}%"></div></div><div class="type-cnt">${count}</div>`;tl.appendChild(row);});
+  if(!sorted.length)tl.innerHTML=`<div style="color:var(--text3);font-size:13px">暂无数据</div>`;
+
+  // Friends leaderboard
+  const allRecs = await getAllUsersRecords();
+  const lb = document.getElementById("friends-lb"); lb.innerHTML="";
+  const lbData = Object.entries(allUsers).map(([id,u])=>{
+    const recs = Object.entries(allRecs[id]||{}).filter(([d])=>d.startsWith(prefix)).flatMap(([,es])=>es);
+    return {id,u,cups:recs.length,spend:recs.reduce((s,e)=>s+e.price,0)};
+  }).sort((a,b)=>b.cups-a.cups);
+
+  lbData.forEach((item,idx)=>{
+    const row=document.createElement("div");row.className="friend-lb-row";
+    const rankClass=idx===0?"gold":idx===1?"silver":idx===2?"bronze":"";
+    const ci=Object.keys(allUsers).indexOf(item.id)%AVATAR_COLORS.length;
+    const lbAvHTML=item.u.avatarImage?`<img src="${item.u.avatarImage}" style="width:30px;height:30px;border-radius:50%;object-fit:cover">`:`<div style="width:30px;height:30px;border-radius:50%;background:${AVATAR_COLORS[ci]}18;color:${AVATAR_COLORS[ci]};display:flex;align-items:center;justify-content:center;font-size:16px">${item.u.avatar||'☕'}</div>`;
+    row.innerHTML=`
+      <div class="lb-rank ${rankClass}">${idx===0?"🥇":idx===1?"🥈":idx===2?"🥉":idx+1}</div>
+      ${lbAvHTML}
+      <div style="flex:1">
+        <div style="font-size:14px;color:var(--text)">${item.u.name}${item.id===currentUser.uid?' <span style="font-size:10px;color:var(--accent)">我</span>':''}</div>
+        <div style="font-size:11px;color:var(--text3)">¥${item.spend.toFixed(0)}</div>
+      </div>
+      <div style="font-size:18px;font-weight:700;color:var(--accent)">${item.cups}<span style="font-size:10px;color:var(--text3);font-weight:400">杯</span></div>
+    `;
+    lb.appendChild(row);
+  });
+  if(!lbData.length)lb.innerHTML=`<div style="color:var(--text3);font-size:13px">暂无数据</div>`;
+}
+
+// ══ OVERLAY HELPERS ═══════════════════════════════════════════════════════
+function showOverlay(id){
+  if(id==="switch-overlay")renderSwitchList();
+  document.getElementById(id).classList.add("show");
+}
+function hideOverlay(id){ document.getElementById(id).classList.remove("show"); }
+
+document.getElementById("day-overlay").addEventListener("click",e=>{if(e.target===document.getElementById("day-overlay"))hideOverlay("day-overlay");});
+document.getElementById("add-overlay").addEventListener("click",e=>{if(e.target===document.getElementById("add-overlay"))hideOverlay("add-overlay");});
+
+// ══ EVENTS ════════════════════════════════════════════════════════════════
+document.getElementById("prev-btn").addEventListener("click",()=>{if(vMonth===0){vYear--;vMonth=11;}else vMonth--;renderCalendar();});
+document.getElementById("next-btn").addEventListener("click",()=>{if(vMonth===11){vYear++;vMonth=0;}else vMonth++;renderCalendar();});
+document.getElementById("add-fab").addEventListener("click",()=>{selDate=todayStr();openAddSheet();});
+document.getElementById("day-add-btn").addEventListener("click",()=>{hideOverlay("day-overlay");setTimeout(openAddSheet,200);});
+document.getElementById("export-btn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(localRecords,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`coffee-${currentUser.name}-${todayStr()}.json`;a.click();});
+document.getElementById("clear-btn").addEventListener("click",async()=>{if(confirm("确定清除你的所有数据？")){{localRecords={};await saveUserRecords();renderCalendar();}}});
+
+// ── Delete account ─────────────────────────────────────────────────────────
+document.getElementById("delete-account-btn").addEventListener("click", () => {
+  const u = currentUser;
+  const ci = Object.keys(allUsers).indexOf(u.uid) % AVATAR_COLORS.length;
+  const av = document.getElementById("del-avatar");
+  if (u.avatarImage) {
+    av.innerHTML = `<img src="${u.avatarImage}" style="width:100%;height:100%;object-fit:cover">`;
+  } else {
+    av.textContent = u.avatar || "☕";
+    av.style.cssText += `;background:${AVATAR_COLORS[ci]}18;color:${AVATAR_COLORS[ci]}`;
+  }
+  document.getElementById("del-username").textContent = u.name;
+  const totalRecords = Object.values(localRecords).reduce((s,es)=>s+es.length, 0);
+  document.getElementById("del-record-count").textContent = `共 ${totalRecords} 条咖啡记录`;
+
+  // Reset to step 1
+  document.getElementById("del-step1").style.display = "flex";
+  document.getElementById("del-step2").style.display = "none";
+  document.getElementById("del-pin-error").textContent = "";
+  showOverlay("delete-overlay");
+});
+
+document.getElementById("del-cancel-btn").addEventListener("click", () => hideOverlay("delete-overlay"));
+document.getElementById("delete-overlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("delete-overlay")) hideOverlay("delete-overlay");
+});
+
+document.getElementById("del-next-btn").addEventListener("click", () => {
+  document.getElementById("del-step1").style.display = "none";
+  document.getElementById("del-step2").style.display = "flex";
+  document.getElementById("del-pin-error").textContent = "";
+  buildPinPad(
+    document.getElementById("del-pin-pad"),
+    document.getElementById("del-pin-dots"),
+    4,
+    async (pin) => {
+      if (hashPin(pin) === currentUser.pinHash) {
+        await doDeleteAccount(currentUser.uid);
+      } else {
+        document.getElementById("del-pin-error").textContent = "PIN 码错误，请重试";
+        setTimeout(() => {
+          document.getElementById("del-pin-error").textContent = "";
+          buildPinPad(
+            document.getElementById("del-pin-pad"),
+            document.getElementById("del-pin-dots"),
+            4,
+            async (p2) => {
+              if (hashPin(p2) === currentUser.pinHash) {
+                await doDeleteAccount(currentUser.uid);
+              } else {
+                document.getElementById("del-pin-error").textContent = "PIN 码错误，请重试";
+              }
+            }
+          );
+        }, 800);
+      }
+    }
+  );
+});
+
+document.getElementById("del-back-btn").addEventListener("click", () => {
+  document.getElementById("del-step1").style.display = "flex";
+  document.getElementById("del-step2").style.display = "none";
+});
+
+async function doDeleteAccount(id) {
+  // Delete records from shared storage
+  try { await window.storage.delete("records:" + id, true); } catch {}
+  // Remove from users list
+  delete allUsers[id];
+  await saveUsers();
+  // Hide overlay and go back to login
+  hideOverlay("delete-overlay");
+  // Reset app state
+  currentUser = null;
+  localRecords = {};
+  // Re-show login screen
+  document.getElementById("pages").style.display = "none";
+  document.getElementById("bottom-nav").style.display = "none";
+  document.getElementById("login-screen").style.display = "flex";
+  // Rebuild login screen
+  document.getElementById("existing-users").innerHTML = '<div style="font-size:13px;color:var(--text3);margin-bottom:4px">选择账户</div>';
+  document.getElementById("existing-users").style.display = "none";
+  document.getElementById("login-divider").style.display = "none";
+  document.getElementById("ls-main").style.display = "flex";
+  document.getElementById("ls-create").style.display = "none";
+  document.getElementById("ls-verify").style.display = "none";
+  await initLogin();
+}
+
+function switchPage(btn){
+  document.querySelectorAll(".nav-item").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  const pid=btn.dataset.page;
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById(pid).classList.add("active");
+  if(pid==="stats-page")renderStats();
+  if(pid==="settings-page")renderAdminPanel();
+}
+
+// ══ INIT ══════════════════════════════════════════════════════════════════
+initLogin();
+</script>
+</body>
+</html>
